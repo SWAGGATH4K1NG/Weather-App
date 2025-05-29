@@ -1,0 +1,110 @@
+ion-content {
+  --background: #f5f5f5;
+}
+
+ion-card {
+  margin: 16px 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+ion-card-header {
+  padding-bottom: 8px;
+}
+
+ion-card-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+}
+
+ion-card-title ion-icon {
+  margin-right: 8px;
+}
+
+ion-card-subtitle {
+  display: flex;
+  align-items: center;
+  text-transform: capitalize;
+  font-size: 1.1rem;
+}
+
+ion-item p {
+  margin: 8px 0;
+  display: flex;
+  align-items: center;
+}
+
+ion-icon {
+  margin-right: 4px;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+.loading-container p {
+  margin-top: 16px;
+  color: var(--ion-color-medium);
+}
+
+ion-badge {
+  padding: 8px 12px;
+  border-radius: 16px;
+  font-size: 1rem;
+  margin-top: 8px;
+}
+
+h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--ion-color-primary);
+}
+
+/* Estilos para o formulário de avaliação */
+.rating-container {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+ion-button[fill="clear"] {
+  --padding-start: 5px;
+  --padding-end: 5px;
+}
+
+ion-button[fill="clear"] ion-icon {
+  font-size: 24px;
+}
+
+/* Estilos para os botões de ação */
+ion-grid ion-button {
+  margin: 8px 0;
+}
+
+/* Estilos para o formulário de feedback */
+ion-textarea {
+  --background: #f9f9f9;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  ion-content {
+    --background: #121212;
+  }
+  
+  ion-card {
+    --background: #1e1e1e;
+  }
+  
+  ion-textarea {
+    --background: #2d2d2d;
+  }
+}

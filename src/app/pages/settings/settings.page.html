@@ -1,0 +1,130 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="returnTo"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Configurações</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Indicador de carregamento -->
+  <div *ngIf="loading" class="loading-container">
+    <ion-spinner name="circular"></ion-spinner>
+    <p>A carregar configurações...</p>
+  </div>
+
+  <div *ngIf="!loading">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="settings-outline"></ion-icon>
+          Preferências do Aplicativo
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list lines="full">
+          <!-- Unidades de temperatura (PUT) -->
+          <ion-item>
+            <ion-label position="stacked">Unidades de Temperatura</ion-label>
+            <ion-select [(ngModel)]="settings.units" interface="popover">
+              <ion-select-option *ngFor="let option of unitOptions" [value]="option.value">
+                {{ option.label }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <!-- Idioma (PUT) -->
+          <ion-item>
+            <ion-label position="stacked">Idioma</ion-label>
+            <ion-select [(ngModel)]="settings.lang" interface="popover">
+              <ion-select-option *ngFor="let option of languageOptions" [value]="option.value">
+                {{ option.label }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <!-- Tema (PATCH) -->
+          <ion-item>
+            <ion-label position="stacked">Tema</ion-label>
+            <ion-select [(ngModel)]="settings.theme" interface="popover" (ionChange)="updateTheme(settings.theme)">
+              <ion-select-option *ngFor="let option of themeOptions" [value]="option.value">
+                {{ option.label }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <!-- Notificações (PUT) -->
+          <ion-item>
+            <ion-label>Notificações</ion-label>
+            <ion-toggle [(ngModel)]="settings.notifications" slot="end"></ion-toggle>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Botões de ação -->
+    <ion-grid>
+      <ion-row>
+        <ion-col>
+          <!-- Botão para salvar configurações (PUT) -->
+          <ion-button expand="block" color="primary" (click)="saveSettings()">
+            <ion-icon name="save-outline" slot="start"></ion-icon>
+            Salvar Configurações
+          </ion-button>
+        </ion-col>
+        <ion-col>
+          <!-- Botão para resetar configurações (DELETE) -->
+          <ion-button expand="block" color="danger" (click)="resetSettings()">
+            <ion-icon name="refresh-outline" slot="start"></ion-icon>
+            Resetar
+          </ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <!-- Informações sobre os métodos HTTP -->
+    <ion-card class="ion-margin-top">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="code-outline"></ion-icon>
+          Métodos HTTP Utilizados
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list lines="none">
+          <ion-item>
+            <ion-label>
+              <h3>GET</h3>
+              <p>Obter dados do clima, previsão, qualidade do ar e configurações</p>
+            </ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-label>
+              <h3>POST</h3>
+              <p>Adicionar cidades aos favoritos e enviar feedback</p>
+            </ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-label>
+              <h3>PUT</h3>
+              <p>Atualizar todas as configurações do usuário</p>
+            </ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-label>
+              <h3>PATCH</h3>
+              <p>Atualizar apenas o tema da aplicação</p>
+            </ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-label>
+              <h3>DELETE</h3>
+              <p>Remover cidades dos favoritos e resetar configurações</p>
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>

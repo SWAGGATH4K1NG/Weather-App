@@ -1,0 +1,269 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start" *ngIf="tempo || mostrarFavoritos || mostrarHistorico || mostrarConfiguracoes">
+      <ion-button (click)="resetarVisualizacao($event, true)">
+        <ion-icon name="home"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Previsão do Tempo</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="toggleFavoritos($event)">
+        <ion-icon name="heart"></ion-icon>
+      </ion-button>
+      <ion-button (click)="toggleHistorico($event)">
+        <ion-icon name="time"></ion-icon>
+      </ion-button>
+      <ion-button (click)="toggleConfiguracoes($event)">
+        <ion-icon name="settings"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- Formulário de busca -->
+  <form (ngSubmit)="buscarClima()" class="search-form">
+    <div class="search-container">
+      <ion-item class="search-input-container">
+        <ion-icon name="location-outline" slot="start" color="primary"></ion-icon>
+        <ion-label position="floating">Nome da cidade</ion-label>
+        <ion-input [(ngModel)]="cidade" name="cidade" required autocomplete="off" autocorrect="off" spellcheck="false" class="city-input"></ion-input>
+        <div *ngIf="cidade" slot="end" class="action-buttons">
+          <ion-button fill="clear" (click)="adicionarCidadePesquisaAosFavoritos($event)" [disabled]="carregandoFavoritos" class="action-button">
+            <ion-icon *ngIf="!carregandoFavoritos" [name]="cidadeHistoricoEstaNosFavoritos(cidade) ? 'heart' : 'heart-outline'" [color]="cidadeHistoricoEstaNosFavoritos(cidade) ? 'danger' : 'medium'" style="font-size: 20px;"></ion-icon>
+            <ion-spinner *ngIf="carregandoFavoritos" name="crescent" color="medium" style="width: 20px; height: 20px;"></ion-spinner>
+          </ion-button>
+          <ion-button fill="clear" (click)="limparCidade($event)" class="action-button">
+            <ion-icon name="trash" color="medium" style="font-size: 20px;"></ion-icon>
+          </ion-button>
+        </div>
+      </ion-item>
+      
+      <ion-button expand="full" type="submit" [disabled]="carregar" class="search-button">
+        <ion-icon [name]="carregar ? 'refresh' : 'search'" slot="start" [class.spin-icon]="carregar"></ion-icon>
+        {{ carregar ? 'Carregar...' : 'Previsão Diária' }}
+      </ion-button>
+    </div>
+  </form>
+
+  <!-- Loading indicator -->
+  <div class="loading-container" *ngIf="carregar">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <div class="loading-text">A carregar informações do clima...</div>
+  </div>
+
+  <!-- Mensagem de erro -->
+  <ion-item *ngIf="erro" color="danger" lines="none" class="ion-margin-top">
+    <ion-icon name="alert-circle" slot="start"></ion-icon>
+    <ion-label>{{ erro }}</ion-label>
+  </ion-item>
+
+  <!-- Lista de favoritos -->
+  <div *ngIf="mostrarFavoritos" class="content-padding">
+    <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+      <span>Cidades Favoritas</span>
+      <ion-button fill="clear" size="small" (click)="limparTodosFavoritos($event)" *ngIf="favoritos.length > 0">
+        <ion-icon name="trash" slot="start"></ion-icon>
+        <small>Limpar Todos</small>
+      </ion-button>
+    </div>
+    
+    <div class="weather-card">
+      <ion-list lines="none">
+        <ion-item-sliding *ngFor="let favorito of favoritos">
+          <ion-item>
+            <ion-icon name="location-outline" slot="start" color="primary"></ion-icon>
+            <ion-label (click)="buscarDoFavorito(favorito.name, $event)" style="cursor: pointer">
+              {{ favorito.name }}, {{ favorito.country }}
+            </ion-label>
+            <div slot="end" class="action-buttons">
+              <ion-button fill="clear" (click)="removerFavorito(favorito.id, $event)" [disabled]="carregandoFavoritos" class="action-button">
+                <ion-icon *ngIf="!carregandoFavoritos" name="heart" color="danger" style="font-size: 20px;"></ion-icon>
+                <ion-spinner *ngIf="carregandoFavoritos" name="crescent" color="medium" style="width: 20px; height: 20px;"></ion-spinner>
+              </ion-button>
+              <ion-button fill="clear" (click)="buscarDoFavorito(favorito.name, $event)" class="action-button">
+                <ion-icon name="search-outline" color="primary" style="font-size: 20px;"></ion-icon>
+              </ion-button>
+            </div>
+          </ion-item>
+          
+          <!-- Opção de deslizar removida para evitar duplicação de funcionalidade -->
+        </ion-item-sliding>
+        
+        <ion-item *ngIf="favoritos.length === 0">
+          <ion-label color="medium" class="ion-text-center">
+            <ion-icon name="heart-outline" style="font-size: 48px; margin: 20px 0;"></ion-icon>
+            <p>Nenhuma cidade favorita</p>
+            <p>Adicione cidades aos favoritos para acessá-las rapidamente</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </div>
+  </div>
+
+  <!-- Histórico de pesquisas -->
+  <div *ngIf="mostrarHistorico" class="content-padding">
+    <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+      <span>Histórico de Pesquisas</span>
+      <ion-button fill="clear" size="small" (click)="limparHistorico($event)" *ngIf="historico.length > 0">
+        <ion-icon name="trash" slot="start"></ion-icon>
+        <small>Limpar</small>
+      </ion-button>
+    </div>
+    
+    <div class="weather-card">
+      <ion-list lines="none">
+        <ion-item-sliding *ngFor="let item of historico">
+          <ion-item>
+            <ion-icon name="time-outline" slot="start" color="primary"></ion-icon>
+            <ion-label (click)="buscarDoHistorico(item.query, $event)" style="cursor: pointer">
+              {{ item.query }}
+              <p>{{ item.timestamp | date:'dd/MM/yyyy HH:mm' }}</p>
+            </ion-label>
+            <div slot="end" class="action-buttons">
+              <ion-button fill="clear" (click)="adicionarAosFavoritosDoHistorico(item.query, $event)" [disabled]="carregandoFavoritos" class="action-button">
+                <ion-icon *ngIf="!carregandoFavoritos" [name]="cidadeHistoricoEstaNosFavoritos(item.query) ? 'heart' : 'heart-outline'" [color]="cidadeHistoricoEstaNosFavoritos(item.query) ? 'danger' : 'medium'" style="font-size: 20px;"></ion-icon>
+                <ion-spinner *ngIf="carregandoFavoritos" name="crescent" color="medium" style="width: 20px; height: 20px;"></ion-spinner>
+              </ion-button>
+              <ion-button fill="clear" (click)="buscarDoHistorico(item.query, $event)" class="action-button">
+                <ion-icon name="search-outline" color="primary" style="font-size: 20px;"></ion-icon>
+              </ion-button>
+            </div>
+          </ion-item>
+          
+          <ion-item-options side="end">
+            <ion-item-option color="danger" (click)="removerDoHistorico(item.id, $event)">
+              <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+            </ion-item-option>
+          </ion-item-options>
+        </ion-item-sliding>
+        
+        <ion-item *ngIf="historico.length === 0">
+          <ion-label color="medium" class="ion-text-center">
+            <ion-icon name="time-outline" style="font-size: 48px; margin: 20px 0;"></ion-icon>
+            <p>Nenhuma pesquisa recente</p>
+            <p>Seu histórico de pesquisas aparecerá aqui</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </div>
+  </div>
+
+  <!-- Resultado do clima atual -->
+  <div *ngIf="tempo && !carregar" class="content-padding">
+    <ion-button class="favorite-button" fill="clear" (click)="adicionarFavorito($event)" [color]="cidadeEstaNosFavoritos() ? 'danger' : 'medium'" [disabled]="carregandoFavoritos" class="action-button">
+      <ion-icon *ngIf="!carregandoFavoritos" [name]="cidadeEstaNosFavoritos() ? 'heart' : 'heart-outline'" style="font-size: 24px;"></ion-icon>
+      <ion-spinner *ngIf="carregandoFavoritos" name="crescent" color="medium" style="width: 24px; height: 24px;"></ion-spinner>
+    </ion-button>
+    
+    <div class="weather-card current-weather-card">
+      <div class="weather-card-primary" [ngClass]="getWeatherBgClass(tempo.weather[0].icon)">
+        <!-- Efeito de partículas para chuva -->
+        <div class="rain-effect" *ngIf="tempo.weather[0].icon.startsWith('09') || tempo.weather[0].icon.startsWith('10')">
+          <span *ngFor="let i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]" class="drop"></span>
+        </div>
+        
+        <!-- Efeito de partículas para neve -->
+        <div class="snow-effect" *ngIf="tempo.weather[0].icon.startsWith('13')">
+          <span *ngFor="let i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]" class="snowflake"></span>
+        </div>
+        
+        <div style="display: flex; align-items: center; position: relative; z-index: 2;">
+          <ion-img [src]="getIconUrl(tempo.weather[0].icon)" class="weather-icon animate-weather-icon"></ion-img>
+          <div>
+            <h2 class="city-name">{{ tempo.name }}, {{ tempo.sys.country }}</h2>
+            <h1 class="temperature">{{ tempo.main.temp }}°C</h1>
+            <p class="weather-condition">{{ tempo.weather[0].description }}</p>
+          </div>
+        </div>
+        
+        <div class="weather-details" style="position: relative; z-index: 2;">
+          <div class="weather-detail-item">
+            <ion-icon name="water-outline"></ion-icon>
+            <span class="weather-detail-value">{{ tempo.main.humidity }}%</span>
+            <span class="weather-detail-label">Humidade</span>
+          </div>
+          
+          <div class="weather-detail-item">
+            <ion-icon name="speedometer-outline"></ion-icon>
+            <span class="weather-detail-value">{{ tempo.main.pressure }}</span>
+            <span class="weather-detail-label">Pressão</span>
+          </div>
+          
+          <div class="weather-detail-item">
+            <ion-icon name="navigate-outline"></ion-icon>
+            <span class="weather-detail-value">{{ tempo.wind.speed }}</span>
+            <span class="weather-detail-label">Vento km/h</span>
+          </div>
+        </div>
+      </div>
+      
+      <ion-button expand="block" fill="clear" [routerLink]="['/details']" [queryParams]="{city: tempo.name}" class="ion-margin">
+        <ion-icon name="information-circle" slot="start"></ion-icon>
+        Ver detalhes completos
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- Previsão para os próximos dias -->
+  <div *ngIf="previsaoPorDia.length > 0" class="content-padding">
+    <h2 class="section-title">Previsão para os próximos dias</h2>
+    
+    <div class="weather-card forecast-card">
+      <div *ngFor="let item of previsaoPorDia" class="forecast-item">
+        <div class="forecast-day">
+          <strong>{{ item.dt_txt | date:'EEEE' }}</strong>
+          <div>{{ item.dt_txt | date:'dd/MM' }}</div>
+        </div>
+        
+        <div class="forecast-temp">
+          {{ item.main.temp }}°C
+        </div>
+        
+        <ion-img [src]="getIconUrl(item.weather[0].icon)" class="forecast-icon"></ion-img>
+      </div>
+    </div>
+  </div>
+
+  <!-- Configurações -->
+  <div *ngIf="mostrarConfiguracoes" class="content-padding">
+    <h2 class="section-title">Configurações do Aplicativo</h2>
+    
+    <div class="weather-card">
+      <ion-list lines="none">
+        <ion-item>
+          <ion-icon name="thermometer-outline" slot="start" color="primary"></ion-icon>
+          <ion-label>Unidade de temperatura</ion-label>
+          <ion-select [(ngModel)]="unidade" (ionChange)="salvarConfiguracoes($event)" interface="popover">
+            <ion-select-option value="metric">Celsius (°C)</ion-select-option>
+            <ion-select-option value="imperial">Fahrenheit (°F)</ion-select-option>
+            <ion-select-option value="standard">Kelvin (K)</ion-select-option>
+          </ion-select>
+        </ion-item>
+        
+        <ion-item>
+          <ion-icon name="language-outline" slot="start" color="primary"></ion-icon>
+          <ion-label>Idioma</ion-label>
+          <ion-select [(ngModel)]="idioma" (ionChange)="salvarConfiguracoes($event)" interface="popover">
+            <ion-select-option value="pt">Português</ion-select-option>
+            <ion-select-option value="en">Inglês</ion-select-option>
+            <ion-select-option value="es">Espanhol</ion-select-option>
+            <ion-select-option value="fr">Francês</ion-select-option>
+          </ion-select>
+        </ion-item>
+      </ion-list>
+      
+      <div class="ion-padding">
+        <ion-button expand="block" (click)="salvarConfiguracoes($event)" class="ion-margin-bottom">
+          <ion-icon name="save-outline" slot="start"></ion-icon>
+          Salvar Configurações
+        </ion-button>
+        
+        <ion-button expand="block" fill="outline" routerLink="/settings" [queryParams]="{returnTo: '/home'}">
+          <ion-icon name="settings-outline" slot="start"></ion-icon>
+          Configurações Avançadas
+        </ion-button>
+      </div>
+    </div>
+  </div>
+</ion-content>

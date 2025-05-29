@@ -1,0 +1,194 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Detalhes do Clima</ion-title>
+    <ion-buttons slot="end" *ngIf="weatherData && !loading">
+      <!-- Botão de favoritos (POST/DELETE) -->
+      <ion-button (click)="toggleFavorite()" [color]="isFavorite ? 'danger' : 'medium'" [attr.aria-label]="isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'" tabindex="0">
+        <ion-icon [name]="isFavorite ? 'heart' : 'heart-outline'" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Indicador de carregamento -->
+  <div *ngIf="loading" class="loading-container">
+    <ion-spinner name="circular"></ion-spinner>
+    <p>A carregar os dados do clima...</p>
+  </div>
+
+  <!-- Mensagem de erro -->
+  <ion-item *ngIf="error" color="danger" lines="none" class="ion-margin-top">
+    <ion-icon name="alert-circle" slot="start"></ion-icon>
+    <ion-label>{{ error }}</ion-label>
+  </ion-item>
+
+  <!-- Dados detalhados do clima -->
+  <div *ngIf="weatherData && !loading">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          {{ weatherData.name }}, {{ weatherData.sys.country }}
+        </ion-card-title>
+        <ion-card-subtitle>
+          <ion-img [src]="getIconUrl(weatherData.weather[0].icon)" style="width: 50px; display: inline-block;"></ion-img>
+          {{ weatherData.weather[0].description }}
+        </ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-grid>
+          <ion-row>
+            <ion-col size="6">
+              <h3>Temperatura</h3>
+              <p><ion-icon name="thermometer"></ion-icon> Atual: {{ weatherData.main.temp }}°C</p>
+              <p><ion-icon name="thermometer-outline"></ion-icon> Sensação: {{ weatherData.main.feels_like }}°C</p>
+              <p><ion-icon name="arrow-up"></ion-icon> Máxima: {{ weatherData.main.temp_max }}°C</p>
+              <p><ion-icon name="arrow-down"></ion-icon> Mínima: {{ weatherData.main.temp_min }}°C</p>
+            </ion-col>
+            <ion-col size="6">
+              <h3>Condições</h3>
+              <p><ion-icon name="water"></ion-icon> Humidade: {{ weatherData.main.humidity }}%</p>
+              <p><ion-icon name="speedometer"></ion-icon> Pressão: {{ weatherData.main.pressure }} hPa</p>
+              <p><ion-icon name="cloud"></ion-icon> Nuvens: {{ weatherData.clouds.all }}%</p>
+              <p><ion-icon name="time"></ion-icon> Atualizado: {{ formatDate(weatherData.dt) }}</p>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Detalhes do vento -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="navigate"></ion-icon> Informações do Vento
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-grid>
+          <ion-row>
+            <ion-col size="6">
+              <p>Velocidade: {{ weatherData.wind.speed }} km/h</p>
+            </ion-col>
+            <ion-col size="6">
+              <p>Direção: {{ getWindDirection(weatherData.wind.deg) }} ({{ weatherData.wind.deg }}°)</p>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Qualidade do ar -->
+    <ion-card *ngIf="airPollution">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="leaf"></ion-icon> Qualidade do Ar
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item lines="none">
+          <ion-label>
+            <h2>Índice de Qualidade do Ar</h2>
+            <ion-badge [color]="getAqiColor(airPollution.list[0].main.aqi)">
+              {{ getAqiDescription(airPollution.list[0].main.aqi) }}
+            </ion-badge>
+          </ion-label>
+        </ion-item>
+
+        <ion-grid>
+          <ion-row>
+            <ion-col size="6">
+              <p>CO: {{ airPollution.list[0].components.co }} μg/m³</p>
+              <p>NO₂: {{ airPollution.list[0].components.no2 }} μg/m³</p>
+              <p>O₃: {{ airPollution.list[0].components.o3 }} μg/m³</p>
+              <p>SO₂: {{ airPollution.list[0].components.so2 }} μg/m³</p>
+            </ion-col>
+            <ion-col size="6">
+              <p>PM2.5: {{ airPollution.list[0].components.pm2_5 }} μg/m³</p>
+              <p>PM10: {{ airPollution.list[0].components.pm10 }} μg/m³</p>
+              <p>NH₃: {{ airPollution.list[0].components.nh3 }} μg/m³</p>
+              <p>NO: {{ airPollution.list[0].components.no }} μg/m³</p>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Coordenadas geográficas -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="location"></ion-icon> Localização
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>Latitude: {{ weatherData.coord.lat }}</p>
+        <p>Longitude: {{ weatherData.coord.lon }}</p>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Botões de ação -->
+    <ion-grid>
+      <ion-row>
+        <ion-col>
+          <!-- Botão para adicionar/remover dos favoritos (POST/DELETE) -->
+          <ion-button expand="block" [color]="isFavorite ? 'danger' : 'primary'" (click)="toggleFavorite()" tabindex="0">
+            <ion-icon [name]="isFavorite ? 'heart' : 'heart-outline'" slot="start"></ion-icon>
+            {{ isFavorite ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos' }}
+          </ion-button>
+        </ion-col>
+        <ion-col>
+          <!-- Botão para mostrar formulário de feedback (POST) -->
+          <ion-button expand="block" color="tertiary" (click)="toggleFeedbackForm()" tabindex="0" aria-label="Enviar feedback sobre esta cidade">
+            <ion-icon name="chatbubble-outline" slot="start"></ion-icon>
+            Enviar Feedback
+          </ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <!-- Formulário de feedback (POST) -->
+    <ion-card *ngIf="showFeedbackForm">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="star"></ion-icon> Avalie esta cidade
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item>
+          <ion-label position="stacked">Avaliação</ion-label>
+          <div class="rating-container">
+            <ion-button fill="clear" (click)="setRating(1)" [color]="userFeedback.rating >= 1 ? 'warning' : 'medium'" aria-label="1 estrela">
+              <ion-icon name="star"></ion-icon>
+            </ion-button>
+            <ion-button fill="clear" (click)="setRating(2)" [color]="userFeedback.rating >= 2 ? 'warning' : 'medium'" aria-label="2 estrelas">
+              <ion-icon name="star"></ion-icon>
+            </ion-button>
+            <ion-button fill="clear" (click)="setRating(3)" [color]="userFeedback.rating >= 3 ? 'warning' : 'medium'" aria-label="3 estrelas">
+              <ion-icon name="star"></ion-icon>
+            </ion-button>
+            <ion-button fill="clear" (click)="setRating(4)" [color]="userFeedback.rating >= 4 ? 'warning' : 'medium'" aria-label="4 estrelas">
+              <ion-icon name="star"></ion-icon>
+            </ion-button>
+            <ion-button fill="clear" (click)="setRating(5)" [color]="userFeedback.rating >= 5 ? 'warning' : 'medium'" aria-label="5 estrelas">
+              <ion-icon name="star"></ion-icon>
+            </ion-button>
+          </div>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Comentário (opcional)</ion-label>
+          <ion-textarea [(ngModel)]="userFeedback.comment" placeholder="Compartilhe sua opinião sobre esta cidade..."></ion-textarea>
+        </ion-item>
+        <ion-button expand="block" (click)="submitFeedback()" class="ion-margin-top" tabindex="0" aria-label="Enviar avaliação">
+          <ion-icon name="send" slot="start"></ion-icon>
+          Enviar Feedback
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Removido o botão de configurações avançadas, pois já está acessível na página principal -->
+  </div>
+</ion-content>
