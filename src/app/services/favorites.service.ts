@@ -87,7 +87,7 @@ export class FavoritesService {
       return of(false);
     }
     
-    // Filtrar a cidade da lista
+    // Responder com a cidade da lista
     const updatedFavorites = currentFavorites.filter(city => city.id !== id);
     
     // Se a lista mudou de tamanho, significa que removemos com sucesso
