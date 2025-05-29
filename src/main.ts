@@ -7,7 +7,7 @@ import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
 import { registerIcons } from './app/icons';
 
-// Registrar ícones antes de inicializar a aplicação
+// Registar os ícones antes de iniciar a aplicação
 registerIcons();
 
 bootstrapApplication(AppComponent, {
