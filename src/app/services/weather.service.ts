@@ -128,8 +128,8 @@ export class WeatherService {
   private baseUrl = 'https://api.openweathermap.org/data/2.5';
   private geoUrl = 'https://api.openweathermap.org/geo/1.0';
   
-  // URL da nossa API de backend (simulada com localStorage neste exemplo)
-  private backendUrl = 'https://api.weatherapp.example/api';
+  // URL da nossa API de backend real
+  private backendUrl = 'http://localhost:3000';
   
   // Usuário simulado para demonstração
   private currentUserId = 'user123';
@@ -214,7 +214,6 @@ export class WeatherService {
 
   // POST - Adicionar cidade aos favoritos
   addFavoriteCity(city: WeatherData): Observable<FavoriteCity> {
-    // Em uma aplicação real, isso seria um POST para uma API
     const newFavorite: FavoriteCity = {
       name: city.name,
       country: city.sys.country,
@@ -224,83 +223,106 @@ export class WeatherService {
       addedAt: new Date()
     };
     
-    // Simulação de POST para API
-    console.log(`POST ${this.backendUrl}/favorites`, newFavorite);
-    
-    // Armazenar localmente para simulação
-    const favorites = JSON.parse(localStorage.getItem('weatherApp_favorites') || '[]');
-    newFavorite.id = Date.now(); // Simular ID gerado pelo servidor
-    favorites.push(newFavorite);
-    localStorage.setItem('weatherApp_favorites', JSON.stringify(favorites));
-    
-    return of(newFavorite);
+    // Fazer um POST real para a API
+    return this.http.post<FavoriteCity>(`${this.backendUrl}/favorites`, newFavorite).pipe(
+      catchError(error => {
+        console.error('Erro ao adicionar cidade aos favoritos:', error);
+        
+        // Fallback para localStorage em caso de erro
+        const favorites = JSON.parse(localStorage.getItem('weatherApp_favorites') || '[]');
+        newFavorite.id = Date.now(); // Simular ID gerado pelo servidor
+        favorites.push(newFavorite);
+        localStorage.setItem('weatherApp_favorites', JSON.stringify(favorites));
+        
+        return of(newFavorite);
+      })
+    );
   }
 
   // GET - Obter cidades favoritas do usuário
   getFavoriteCities(): Observable<FavoriteCity[]> {
-    // Em uma aplicação real, isso seria um GET para uma API
-    console.log(`GET ${this.backendUrl}/favorites?userId=${this.currentUserId}`);
-    
-    // Simulação de resposta da API
-    const favorites = JSON.parse(localStorage.getItem('weatherApp_favorites') || '[]');
-    const userFavorites = favorites.filter((fav: FavoriteCity) => fav.userId === this.currentUserId);
-    
-    return of(userFavorites);
+    // Fazer um GET real para a API
+    return this.http.get<FavoriteCity[]>(`${this.backendUrl}/favorites?userId=${this.currentUserId}`).pipe(
+      catchError(error => {
+        console.error('Erro ao obter cidades favoritas:', error);
+        
+        // Fallback para localStorage em caso de erro
+        const favorites = JSON.parse(localStorage.getItem('weatherApp_favorites') || '[]');
+        const userFavorites = favorites.filter((fav: FavoriteCity) => fav.userId === this.currentUserId);
+        
+        return of(userFavorites);
+      })
+    );
   }
 
   // DELETE - Remover cidade dos favoritos
   removeFavoriteCity(cityId: number): Observable<{success: boolean}> {
-    // Em uma aplicação real, isso seria um DELETE para uma API
-    console.log(`DELETE ${this.backendUrl}/favorites/${cityId}`);
-    
-    // Simulação de DELETE
-    const favorites = JSON.parse(localStorage.getItem('weatherApp_favorites') || '[]');
-    const updatedFavorites = favorites.filter((fav: FavoriteCity) => fav.id !== cityId);
-    localStorage.setItem('weatherApp_favorites', JSON.stringify(updatedFavorites));
-    
-    return of({success: true});
+    // Fazer um DELETE real para a API
+    return this.http.delete<{success: boolean}>(`${this.backendUrl}/favorites/${cityId}`).pipe(
+      map(() => ({ success: true })),
+      catchError(error => {
+        console.error('Erro ao remover cidade dos favoritos:', error);
+        
+        // Fallback para localStorage em caso de erro
+        const favorites = JSON.parse(localStorage.getItem('weatherApp_favorites') || '[]');
+        const updatedFavorites = favorites.filter((fav: FavoriteCity) => fav.id !== cityId);
+        localStorage.setItem('weatherApp_favorites', JSON.stringify(updatedFavorites));
+        
+        return of({success: true});
+      })
+    );
   }
 
   // PUT - Atualizar configurações do usuário
   updateUserSettings(settings: UserSettings): Observable<UserSettings> {
-    // Em uma aplicação real, isso seria um PUT para uma API
-    console.log(`PUT ${this.backendUrl}/users/${this.currentUserId}/settings`, settings);
-    
-    // Simulação de PUT
+    // Garantir que o ID do usuário esteja definido
     settings.id = this.currentUserId;
-    localStorage.setItem('weatherApp_settings', JSON.stringify(settings));
     
-    return of(settings);
+    // Fazer um PUT real para a API
+    return this.http.put<UserSettings>(`${this.backendUrl}/settings/${this.currentUserId}`, settings).pipe(
+      catchError(error => {
+        console.error('Erro ao atualizar configurações do usuário:', error);
+        
+        // Fallback para localStorage em caso de erro
+        localStorage.setItem('weatherApp_settings', JSON.stringify(settings));
+        
+        return of(settings);
+      })
+    );
   }
 
   // GET - Obter configurações de usuário
   getUserSettings(): Observable<UserSettings> {
-    // Em uma aplicação real, isso seria um GET para uma API
-    console.log(`GET ${this.backendUrl}/users/${this.currentUserId}/settings`);
-    
-    const stored = localStorage.getItem('weatherApp_settings');
-    const defaultSettings: UserSettings = {
-      id: this.currentUserId,
-      units: 'metric', 
-      lang: 'pt',
-      theme: 'light',
-      notifications: true
-    };
-    
-    if (stored) {
-      try {
-        return of(JSON.parse(stored));
-      } catch (e) {
+    // Fazer um GET real para a API
+    return this.http.get<UserSettings>(`${this.backendUrl}/settings/${this.currentUserId}`).pipe(
+      catchError(error => {
+        console.error('Erro ao obter configurações do usuário:', error);
+        
+        // Fallback para localStorage em caso de erro
+        const stored = localStorage.getItem('weatherApp_settings');
+        const defaultSettings: UserSettings = {
+          id: this.currentUserId,
+          units: 'metric', 
+          lang: 'pt',
+          theme: 'light',
+          notifications: true
+        };
+        
+        if (stored) {
+          try {
+            return of(JSON.parse(stored));
+          } catch (e) {
+            return of(defaultSettings);
+          }
+        }
+        
         return of(defaultSettings);
-      }
-    }
-    
-    return of(defaultSettings);
+      })
+    );
   }
 
   // POST - Enviar feedback do usuário sobre uma cidade
   submitFeedback(feedback: {cityName: string, rating: number, comment: string}): Observable<UserFeedback> {
-    // Em uma aplicação real, isso seria um POST para uma API
     const newFeedback: UserFeedback = {
       userId: this.currentUserId,
       cityName: feedback.cityName,
@@ -309,62 +331,77 @@ export class WeatherService {
       createdAt: new Date()
     };
     
-    console.log(`POST ${this.backendUrl}/feedback`, newFeedback);
-    
-    // Simulação de POST
-    const feedbackList = JSON.parse(localStorage.getItem('weatherApp_feedback') || '[]');
-    newFeedback.id = Date.now(); // Simular ID gerado pelo servidor
-    feedbackList.push(newFeedback);
-    localStorage.setItem('weatherApp_feedback', JSON.stringify(feedbackList));
-    
-    return of(newFeedback);
+    // Fazer um POST real para a API
+    return this.http.post<UserFeedback>(`${this.backendUrl}/feedback`, newFeedback).pipe(
+      catchError(error => {
+        console.error('Erro ao enviar feedback:', error);
+        
+        // Fallback para localStorage em caso de erro
+        const feedbackList = JSON.parse(localStorage.getItem('weatherApp_feedback') || '[]');
+        newFeedback.id = Date.now(); // Simular ID gerado pelo servidor
+        feedbackList.push(newFeedback);
+        localStorage.setItem('weatherApp_feedback', JSON.stringify(feedbackList));
+        
+        return of(newFeedback);
+      })
+    );
   }
 
   // DELETE - Limpar configurações de usuário
   clearUserSettings(): Observable<{success: boolean}> {
-    // Em uma aplicação real, isso seria um DELETE para uma API
-    console.log(`DELETE ${this.backendUrl}/users/${this.currentUserId}/settings`);
-    
-    localStorage.removeItem('weatherApp_settings');
-    return of({success: true});
+    // Fazer um DELETE real para a API
+    return this.http.delete<{success: boolean}>(`${this.backendUrl}/settings/${this.currentUserId}`).pipe(
+      map(() => ({ success: true })),
+      catchError(error => {
+        console.error('Erro ao limpar configurações do usuário:', error);
+        
+        // Fallback para localStorage em caso de erro
+        localStorage.removeItem('weatherApp_settings');
+        return of({success: true});
+      })
+    );
   }
 
   // PATCH - Atualizar parcialmente as configurações do usuário
   patchUserSettings(partialSettings: Partial<UserSettings>): Observable<UserSettings> {
-    // Em uma aplicação real, isso seria um PATCH para uma API
-    console.log(`PATCH ${this.backendUrl}/users/${this.currentUserId}/settings`, partialSettings);
-    
-    // Simulação de PATCH
-    const stored = localStorage.getItem('weatherApp_settings');
-    let currentSettings: UserSettings;
-    
-    if (stored) {
-      try {
-        currentSettings = JSON.parse(stored);
-      } catch (e) {
-        currentSettings = {
-          id: this.currentUserId,
-          units: 'metric', 
-          lang: 'pt',
-          theme: 'light',
-          notifications: true
-        };
-      }
-    } else {
-      currentSettings = {
-        id: this.currentUserId,
-        units: 'metric', 
-        lang: 'pt',
-        theme: 'light',
-        notifications: true
-      };
-    }
-    
-    // Atualizar apenas os campos fornecidos
-    const updatedSettings = { ...currentSettings, ...partialSettings };
-    localStorage.setItem('weatherApp_settings', JSON.stringify(updatedSettings));
-    
-    return of(updatedSettings);
+    // Fazer um PATCH real para a API
+    return this.http.patch<UserSettings>(`${this.backendUrl}/settings/${this.currentUserId}`, partialSettings).pipe(
+      catchError(error => {
+        console.error('Erro ao atualizar parcialmente configurações do usuário:', error);
+        
+        // Fallback para localStorage em caso de erro
+        const stored = localStorage.getItem('weatherApp_settings');
+        let currentSettings: UserSettings;
+        
+        if (stored) {
+          try {
+            currentSettings = JSON.parse(stored);
+          } catch (e) {
+            currentSettings = {
+              id: this.currentUserId,
+              units: 'metric', 
+              lang: 'pt',
+              theme: 'light',
+              notifications: true
+            };
+          }
+        } else {
+          currentSettings = {
+            id: this.currentUserId,
+            units: 'metric', 
+            lang: 'pt',
+            theme: 'light',
+            notifications: true
+          };
+        }
+        
+        // Atualizar apenas os campos fornecidos
+        const updatedSettings = { ...currentSettings, ...partialSettings };
+        localStorage.setItem('weatherApp_settings', JSON.stringify(updatedSettings));
+        
+        return of(updatedSettings);
+      })
+    );
   }
 
   // Método auxiliar para obter URL do ícone

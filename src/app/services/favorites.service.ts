@@ -17,7 +17,7 @@ export class FavoritesService {
   // Usar BehaviorSubject para permitir que os componentes se inscrevam em mudanças
   private favoritesSubject = new BehaviorSubject<FavoriteCity[]>([]);
   
-  // Em uma aplicação real, usaríamos uma API real, mas para demonstração
+  // Em uma aplicação com backend, usava-mos a API, mas para demonstração
   // vamos simular com localStorage
   private storageKey = 'weatherApp_favorites';
 
@@ -26,7 +26,7 @@ export class FavoritesService {
     this.loadFavorites();
   }
 
-  // Simula um GET - Obter todas as cidades favoritas
+  // Simula um GET - Obter todas as cidades favoritas // API apenas contem o get
   getFavorites(): Observable<FavoriteCity[]> {
     // Recarregar do localStorage para garantir dados atualizados
     this.loadFavorites();
@@ -38,7 +38,7 @@ export class FavoritesService {
     // Obter a lista atual
     const currentFavorites = this.favoritesSubject.getValue();
     
-    // Verificar se a cidade já existe nos favoritos (case insensitive)
+    // Verificar se a cidade já existe nos favoritos
     const existingCity = currentFavorites.find(city => 
       city.name.toLowerCase() === cityName.toLowerCase() && 
       city.country.toLowerCase() === countryCode.toLowerCase()
@@ -52,7 +52,7 @@ export class FavoritesService {
 
     // Criar nova cidade favorita
     const newFavorite: FavoriteCity = {
-      id: Date.now().toString(), // Gerar ID único
+      id: Date.now().toString(), 
       name: cityName,
       country: countryCode,
       addedAt: new Date()
@@ -61,7 +61,7 @@ export class FavoritesService {
     // Adicionar à lista
     const updatedFavorites = [...currentFavorites, newFavorite];
     
-    // Atualizar o subject e salvar
+    // Atualizar o subject e guarda o mesmo
     this.favoritesSubject.next(updatedFavorites);
     this.saveFavorites(updatedFavorites);
     
@@ -126,7 +126,7 @@ export class FavoritesService {
       ...data
     };
     
-    // Atualizar o subject e salvar
+    // Atualizar o subject e guarda
     this.favoritesSubject.next(updatedFavorites);
     this.saveFavorites(updatedFavorites);
     
@@ -135,7 +135,7 @@ export class FavoritesService {
     return of(updatedFavorites[index]);
   }
 
-  // Limpar todos os favoritos
+  // Elimina todos os favoritos
   clearAllFavorites(): Observable<boolean> {
     this.favoritesSubject.next([]);
     this.saveFavorites([]);

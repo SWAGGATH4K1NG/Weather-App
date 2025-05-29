@@ -66,7 +66,7 @@ export class HistoryService {
     return of(success);
   }
 
-  // Métodos auxiliares para persistência
+  // Métodos caso falhe o loading do histórico
   private loadHistory(): void {
     const stored = localStorage.getItem(this.storageKey);
     if (stored) {
